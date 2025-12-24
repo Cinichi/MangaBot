@@ -1,0 +1,36 @@
+name: Sync master and main
+
+on:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set git identity
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Sync branches
+        run: |
+          CURRENT_BRANCH=$(git branch --show-current)
+
+          if [ "$CURRENT_BRANCH" = "master" ]; then
+            TARGET=main
+          else
+            TARGET=master
+          fi
+
+          git checkout $TARGET
+          git merge $CURRENT_BRANCH --no-edit
+          git push origin $TARGET

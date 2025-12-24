@@ -41,20 +41,21 @@ all_search: Dict[str, str] = dict()
 plugin_dicts: Dict[str, Dict[str, MangaClient]] = {
     "🇬🇧 EN": {
         "MangaDex": MangaDexClient(),
-        "Mgeko": MgekoClient(),
-        "MagaKakalot": MangaKakalotClient(),
-        "Manganelo": ManganeloClient(),
-        "Manganato": ManganatoClient(),
-        "MangaSee":  MangaSeeClient(),
-        "MangaBuddy": MangaBuddyClient(),
-        "AsuraScans": AsuraScansClient(),
-        "NineManga": NineMangaClient(),        
-        "LikeManga": LikeMangaClient(),
-        "FlameComics": FlameComicsClient(),
-        "MangaPark": MangaParkClient(),
-        "ReaperScans": ReaperScansClient(),
-        "ManhwaClan": ManhwaClanClient(),
+       # "Mgeko": MgekoClient(),
+       # "MagaKakalot": MangaKakalotClient(),
+       # "Manganelo": ManganeloClient(),
+       # "Manganato": ManganatoClient(),
+       # "MangaSee":  MangaSeeClient(),
+       # "MangaBuddy": MangaBuddyClient(),
+       # "AsuraScans": AsuraScansClient(),
+       # "NineManga": NineMangaClient(),        
+       # "LikeManga": LikeMangaClient(),
+       # "FlameComics": FlameComicsClient(),
+       # "MangaPark": MangaParkClient(),
+       # "ReaperScans": ReaperScansClient(),
+       # "ManhwaClan": ManhwaClanClient(),
         "Atsumaru": AtsumaruClient(),
+        "Mangafire": MangaFireClient(),
           },
     "🇪🇸 ES": {
         "MangaDex": MangaDexClient(language=("es-la", "es")),
@@ -762,3 +763,4 @@ async def chapter_creation(worker_id: int = 0):
             logger.exception(f"Error sending chapter {chapter.name} to user {chat_id}")
         finally:
             pdf_queue.release(chat_id)
+

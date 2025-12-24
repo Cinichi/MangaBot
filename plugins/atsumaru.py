@@ -26,7 +26,6 @@ class AtsumaruClient(MangaClient):
             content = await self.get_url(url)
             try:
                 data = json.loads(content)
-                # The Kotlin DTO says 'items' contains the list
                 items = data.get("items", [])
             except json.JSONDecodeError:
                 return []
@@ -82,9 +81,6 @@ class AtsumaruClient(MangaClient):
         slug = manga_card.url.split("/")[-1]
         
         # API expects page starting at 0, bot uses 1. 
-        # Note: Tachiyomi fetches all, but here we paginate by 1.
-        # However, this API paginates chapters. 
-        # If the bot requests page 1, we give page 0 of API.
         api_page = page - 1
         
         url = f"{self.base_url}/api/manga/chapters?id={slug}&filter=all&sort=desc&page={api_page}"
@@ -103,7 +99,6 @@ class AtsumaruClient(MangaClient):
             number = ch.get("number", "")
             
             # Construct a unique URL for the chapter: https://atsu.moe/read/{slug}/{chapter_id}
-            # We add a custom parameter so we can easily parse it back later
             chapter_url = f"{self.base_url}/read/{slug}/{ch_id}"
             
             # Clean up title
@@ -152,16 +147,6 @@ class AtsumaruClient(MangaClient):
                 break
 
     async def pictures_from_chapters(self, content: bytes, response=None):
-        # We need to extract the API URL from the passed Chapter URL
-        # Chapter URL: https://atsu.moe/read/{slug}/{chapter_id}
-        # API URL: https://atsu.moe/api/read/chapter?mangaId={slug}&chapterId={chapter_id}
-        
-        # 'response' object usually contains the URL requested. 
-        # If 'content' is the HTML of the reader page, we might not need it if we call API directly.
-        # But MangaClient structure usually calls 'get_url' on chapter.url before calling this.
-        # Since the chapter URL is a valid page, 'content' will be the HTML.
-        # However, it is cleaner to ignore the HTML and call the API directly.
-        
         if response:
             url_str = str(response.url)
         else:
@@ -169,7 +154,7 @@ class AtsumaruClient(MangaClient):
 
         try:
             parts = url_str.split("/")
-            # read / slug / chapter_id
+            # URL format: https://atsu.moe/read/{slug}/{chapter_id}
             # parts[-2] is slug, parts[-1] is chapter_id
             slug = parts[-2]
             chapter_id = parts[-1]
@@ -192,38 +177,35 @@ class AtsumaruClient(MangaClient):
             return images
             
         except Exception as e:
-            print(f"Error parsing Atsumaru images: {e}")
             return []
 
     async def contains_url(self, url: str):
         return url.startswith("https://atsu.moe/")
 
     async def check_updated_urls(self, last_chapters):
-        # Use recentlyUpdated API
+        # We check the recentlyUpdated API endpoint
         url = f"{self.base_url}/api/infinite/recentlyUpdated?page=0&types=Manga,Manwha,Manhua,OEL"
         content = await self.get_url(url)
         try:
             data = json.loads(content)
             items = data.get("items", [])
             
+            # Map of MangaID -> True
+            updated_ids = {item.get("id"): True for item in items}
+            
             updated = []
             not_updated = []
             
-            # Map of MangaID -> Latest Chapter Info
-            latest_map = {}
-            for item in items:
-                manga_id = item.get("id")
-                # The recently updated endpoint returns manga info, 
-                # but to be 100% sure of the chapter URL, we might need to check chapter list.
-                # However, usually checking if the manga is in the "Recently Updated" list is a good hint.
-                # A safer way is to fetch the first chapter of every manga in 'last_chapters'
-                pass
+            for lc in last_chapters:
+                # Extract ID from saved URL: https://atsu.moe/manga/{id}
+                manga_id = lc.url.split("/")[-1]
+                
+                if manga_id in updated_ids:
+                    updated.append(lc.url)
+                else:
+                    not_updated.append(lc.url)
             
-            # Since check_updated_urls logic can be complex, 
-            # we will use the default "check every single one" fallback 
-            # if we can't easily map the trending list to specific chapter URLs.
-            # Returning empty lists triggers the default slow check in bot.py
-            return [], [lc.url for lc in last_chapters]
+            return updated, not_updated
             
         except Exception:
-            return [], []
+            return [], [lc.url for lc in last_chapters]

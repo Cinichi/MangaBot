@@ -23,3 +23,5 @@ from .reaperscans import ReaperScansClient
 from .omgeascans import OmgeaScansClient
 from .manhwaclan import ManhwaClanClient
 from .atsumaru import AtsumaruClient
+from .mangafire import MangaFireClient
+#
